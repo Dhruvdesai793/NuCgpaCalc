@@ -1,4 +1,4 @@
-# React + Vite
+# https://dhruvdesai793.github.io/NuCgpaCalc/
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 

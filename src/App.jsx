@@ -1,21 +1,18 @@
-// App.jsx
 import React, { useState, useRef } from 'react';
-import html2canvas from 'html2canvas';
+import domtoimage from 'dom-to-image-more';
 import CgpaForm from './components/CgpaForm.jsx';
 import CgpaResults from './components/CgpaResults.jsx';
 import DeveloperFooter from './components/DevloperFooter.jsx';
 
-const getInitialSubjects = () => {
-  return [
-    { name: 'Calculus', credits: 4, ceAssignment: '', ceClassTest: '', ceSessional: '', lpwLabFile: '', seeExam: '' },
-    { name: 'Physics', credits: 4, ceAssignment: '', ceClassTest: '', ceSessional: '', lpwLabFile: '', seeExam: '' },
-    { name: 'Computer Programming', credits: 4, ceAssignment: '', ceClassTest: '', ceSessional: '', lpwLabFile: '', seeExam: '' },
-    { name: 'Communication Skills', credits: 3, ceAssignment: '', ceClassTest: '', ceSessional: '', lpwLabFile: '', seeExam: '' },
-    { name: 'Environmental Science', credits: 3, ceAssignment: '', ceClassTest: '', ceSessional: '', lpwLabFile: '', seeExam: '' },
-    { name: 'Workshop', credits: 2, ceAssignment: '', ceClassTest: '', ceSessional: '', lpwLabFile: '', seeExam: '' },
-    { name: 'Yoga', credits: 1, ceAssignment: '', ceClassTest: '', ceSessional: '', lpwLabFile: '', seeExam: '' },
-  ];
-};
+const getInitialSubjects = () => [
+  { name: 'Calculus', credits: 4, ceAssignment: '', ceClassTest: '', ceSessional: '', lpwLabFile: '', seeExam: '' },
+  { name: 'Physics', credits: 4, ceAssignment: '', ceClassTest: '', ceSessional: '', lpwLabFile: '', seeExam: '' },
+  { name: 'Computer Programming', credits: 4, ceAssignment: '', ceClassTest: '', ceSessional: '', lpwLabFile: '', seeExam: '' },
+  { name: 'Communication Skills', credits: 3, ceAssignment: '', ceClassTest: '', ceSessional: '', lpwLabFile: '', seeExam: '' },
+  { name: 'Environmental Science', credits: 3, ceAssignment: '', ceClassTest: '', ceSessional: '', lpwLabFile: '', seeExam: '' },
+  { name: 'Workshop', credits: 2, ceAssignment: '', ceClassTest: '', ceSessional: '', lpwLabFile: '', seeExam: '' },
+  { name: 'Yoga', credits: 1, ceAssignment: '', ceClassTest: '', ceSessional: '', lpwLabFile: '', seeExam: '' },
+];
 
 const gradingScale = (marks) => {
   if (marks >= 90) return 10;
@@ -42,11 +39,17 @@ const App = () => {
     let totalCredits = 0;
 
     for (const subject of semesterSubjects) {
-      if (subject.credits && (subject.ceAssignment || subject.ceClassTest || subject.ceSessional || subject.lpwLabFile || subject.seeExam)) {
-        const ceTotal = (parseFloat(subject.ceAssignment) || 0) + (parseFloat(subject.ceClassTest) || 0) + (parseFloat(subject.ceSessional) || 0);
+      if (
+        subject.credits &&
+        (subject.ceAssignment || subject.ceClassTest || subject.ceSessional || subject.lpwLabFile || subject.seeExam)
+      ) {
+        const ceTotal =
+          (parseFloat(subject.ceAssignment) || 0) +
+          (parseFloat(subject.ceClassTest) || 0) +
+          (parseFloat(subject.ceSessional) || 0);
         const lpwTotal = parseFloat(subject.lpwLabFile) || 0;
         const seeTotal = parseFloat(subject.seeExam) || 0;
-        const totalMarks = (ceTotal + lpwTotal + seeTotal) / (30 + 20 + 50 + 100 + 40) * 100;
+        const totalMarks = ((ceTotal + lpwTotal + seeTotal) / 240) * 100;
         const gpa = gradingScale(totalMarks);
 
         totalCreditPoints += gpa * subject.credits;
@@ -63,20 +66,53 @@ const App = () => {
 
   const generateShareImage = async () => {
     setLoading(true);
-    const element = shareCardRef.current;
-    if (element) {
-      try {
-        const canvas = await html2canvas(element, { useCORS: true });
-        const image = canvas.toDataURL('image/png');
-        setShareImage(image);
-      } catch (error) {
-        console.error("Error generating image:", error);
-      }
+    if (!shareCardRef.current) {
+      setLoading(false);
+      return;
     }
+
+    try {
+      shareCardRef.current.style.opacity = '1';
+      shareCardRef.current.style.zIndex = '50';
+      shareCardRef.current.style.position = 'relative';
+
+      const stripUnsupportedColors = (root) => {
+        const elements = root.querySelectorAll('*');
+        elements.forEach((el) => {
+          const computed = window.getComputedStyle(el);
+          const props = ['color', 'backgroundColor', 'borderColor'];
+
+          props.forEach((prop) => {
+            const value = computed[prop];
+            if (value?.includes('oklab') || value?.includes('color(')) {
+              el.style[prop] = prop === 'color' ? '#F8F1E9' : '#1F2A15';
+            }
+          });
+        });
+      };
+
+      stripUnsupportedColors(shareCardRef.current);
+
+      const dataUrl = await domtoimage.toPng(shareCardRef.current, {
+        quality: 1,
+        bgcolor: '#1F2A15',
+        cacheBust: true,
+      });
+
+      setShareImage(dataUrl);
+
+      shareCardRef.current.style.opacity = '0';
+      shareCardRef.current.style.zIndex = '-50';
+      shareCardRef.current.style.position = 'absolute';
+    } catch (error) {
+      alert(`Failed to generate image: ${error.message}`);
+    }
+
     setLoading(false);
   };
 
   const handleDownload = () => {
+    if (!shareImage) return;
     const link = document.createElement('a');
     link.href = shareImage;
     link.download = `CGPA-Result-${studentName.replace(/\s/g, '_')}.png`;
@@ -86,7 +122,10 @@ const App = () => {
   };
 
   const addSubject = () => {
-    setSemesterSubjects([...semesterSubjects, { name: '', credits: '', ceAssignment: '', ceClassTest: '', ceSessional: '', lpwLabFile: '', seeExam: '' }]);
+    setSemesterSubjects([
+      ...semesterSubjects,
+      { name: '', credits: '', ceAssignment: '', ceClassTest: '', ceSessional: '', lpwLabFile: '', seeExam: '' },
+    ]);
   };
 
   const updateSubject = (index, field, value) => {
@@ -101,15 +140,11 @@ const App = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#283618] text-[#FEFAE0] flex flex-col items-center p-4 sm:p-8 font-sans transition-all duration-500">
-      <div className="text-center mb-8">
-        <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-[#DDA15E]">
-          Nirma University
-        </h1>
-        <p className="text-xl sm:text-2xl font-light text-[#FEFAE0] mt-2">
-          B.Tech First Year CGPA Calculator
-        </p>
+    <div className="min-h-screen flex flex-col items-center pt-24 sm:pt-32 px-4 sm:px-8 transition-all duration-500">
+      <div className="text-center animate-fade-in ">
+       
       </div>
+
       {currentPage === 'form' && (
         <CgpaForm
           studentName={studentName}
@@ -121,6 +156,7 @@ const App = () => {
           calculateCgpa={calculateCgpa}
         />
       )}
+
       {currentPage === 'results' && (
         <CgpaResults
           cgpa={cgpa}
@@ -136,6 +172,7 @@ const App = () => {
           shareCardRef={shareCardRef}
         />
       )}
+
       <DeveloperFooter />
     </div>
   );

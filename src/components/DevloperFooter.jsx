@@ -25,6 +25,7 @@ const DeveloperFooter = () => {
           </a>
         </div>
         <p className="text-sm sm:text-base font-medium text-[var(--text)]/90">by Dhruv Desai</p>
+        <a href="https://github.com/Dhruvdesai793/NuCgpaCalc" target="_blank" rel="noopener noreferrer" className="text-sm sm:text-base font-medium text-[var(--accent)] hover:text-[var(--text)] transition-all duration-300 transform hover:scale-110">Check Source Code</a>
       </div>
     </nav>
   );

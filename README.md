@@ -1,6 +1,6 @@
 # 🎓 NuCgpaCalc - Your B.Tech CGPA Buddy!
 
-![NuCgpaCalc Banner](https://placehold.co/1200x400/282c34/ffffff?text=NuCgpaCalc+Banner)
+![NuCgpaCalc Banner](./demo.png)
 
 ## 🚀 About the Project
 
